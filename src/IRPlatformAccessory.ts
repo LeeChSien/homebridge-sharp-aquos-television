@@ -117,6 +117,11 @@ export class IRPlatformAccessory {
       this.accessory.getService(this.platform.Service.Fanv2) ||
       this.accessory.addService(this.platform.Service.Fanv2)
 
+    this.fanService.setCharacteristic(
+      this.platform.Characteristic.Name,
+      `${this.configs.name} Fan`,
+    )
+
     this.fanService
       .getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value) => {
