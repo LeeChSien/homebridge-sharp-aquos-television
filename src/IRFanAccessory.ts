@@ -9,13 +9,6 @@ enum Power {
   OFF = 'OFF',
 }
 
-enum LightLevel {
-  LEVEL_1 = 1,
-  LEVEL_2 = 2,
-  LEVEL_3 = 3,
-  LEVEL_4 = 4,
-}
-
 enum FanLevel {
   LEVEL_1 = 1,
   LEVEL_2 = 2,
@@ -27,19 +20,12 @@ enum FanDirection {
   UP = 'UP',
 }
 
-const FIXED_ID = 'fixed:ir'
+const FIXED_ID = 'fixed:ir:fan'
 
-export class IRPlatformAccessory {
+export class IRFanAccessory {
   public accessory!: PlatformAccessory
-
-  private lightService!: Service
-  private lightState = {
-    power: Power.OFF as Power,
-    level: LightLevel.LEVEL_4 as LightLevel,
-  }
-
-  private fanService!: Service
-  private fanState = {
+  private service!: Service
+  private state = {
     power: Power.OFF as Power,
     level: FanLevel.LEVEL_2 as FanLevel,
     direction: FanDirection.DOWN as FanDirection,
@@ -78,58 +64,23 @@ export class IRPlatformAccessory {
       .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.SerialNumber, FIXED_ID)
 
-    this.lightService =
-      this.accessory.getService(this.platform.Service.Lightbulb) ||
-      this.accessory.addService(this.platform.Service.Lightbulb)
-
-    this.lightService.setCharacteristic(
-      this.platform.Characteristic.Name,
-      `${this.configs.name} Light`,
-    )
-
-    this.lightService
-      .getCharacteristic(this.platform.Characteristic.Active)
-      .onSet(async (value) => {
-        this.lightState.power = value ? Power.ON : Power.OFF
-        exec('irsend SEND_ONCE livingroom_light TOGGLE')
-      })
-      .onGet(() => this.lightState.power === Power.ON)
-
-    this.lightService
-      .getCharacteristic(this.platform.Characteristic.Brightness)
-      .setProps({ minValue: 1, maxValue: 4, minStep: 1 })
-      .onSet(async (value) => {
-        const step = Math.min(
-          Math.abs(value as number) - (this.lightState.level as number),
-          value as number,
-        )
-
-        for (let i = 0; i < step; i++) {
-          exec(`irsend SEND_ONCE livingroom_light LEVEL`)
-          await new Promise((resolve) => setTimeout(resolve, 500))
-        }
-
-        this.lightState.level = value as LightLevel
-      })
-      .onGet(() => this.lightState.level)
-
-    this.fanService =
+    this.service =
       this.accessory.getService(this.platform.Service.Fanv2) ||
       this.accessory.addService(this.platform.Service.Fanv2)
 
-    this.fanService.setCharacteristic(
+    this.service.setCharacteristic(
       this.platform.Characteristic.Name,
       `${this.configs.name} Fan`,
     )
-
-    this.fanService
+  
+    this.service
       .getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value) => {
-        this.fanState.power = value ? Power.ON : Power.OFF
-        if (this.fanState.power === Power.OFF) {
+        this.state.power = value ? Power.ON : Power.OFF
+        if (this.state.power === Power.OFF) {
           exec('irsend SEND_ONCE livingroom_fan OFF')
         } else {
-          switch (this.fanState.level) {
+          switch (this.state.level) {
             case FanLevel.LEVEL_1:
               exec('irsend SEND_ONCE livingroom_fan ON_WITH_LEVEL_1')
               break
@@ -144,28 +95,28 @@ export class IRPlatformAccessory {
           }
         }
       })
-      .onGet(() => this.fanState.power === Power.ON)
+      .onGet(() => this.state.power === Power.ON)
 
-    this.fanService
+    this.service
       .getCharacteristic(this.platform.Characteristic.RotationSpeed)
       .setProps({ minValue: 1, maxValue: 3, minStep: 1 })
       .onSet(async (value) => {
         exec(`irsend SEND_ONCE livingroom_fan LEVEL_${value}`)
-        this.fanState.level = value as FanLevel
+        this.state.level = value as FanLevel
       })
-      .onGet(() => this.fanState.level)
+      .onGet(() => this.state.level)
 
     const { CLOCKWISE, COUNTER_CLOCKWISE } =
       this.platform.Characteristic.RotationDirection
-    this.fanService
+    this.service
       .getCharacteristic(this.platform.Characteristic.RotationDirection)
       .onSet(async (value) => {
-        this.fanState.direction =
+        this.state.direction =
           value === CLOCKWISE ? FanDirection.UP : FanDirection.DOWN
         exec('irsend SEND_ONCE livingroom_fan REVERSE')
       })
       .onGet(() =>
-        this.fanState.direction === FanDirection.DOWN
+        this.state.direction === FanDirection.DOWN
           ? COUNTER_CLOCKWISE
           : CLOCKWISE,
       )

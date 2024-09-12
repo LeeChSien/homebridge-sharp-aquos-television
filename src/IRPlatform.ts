@@ -8,7 +8,9 @@ import type {
   Service,
 } from 'homebridge'
 
-import { IRPlatformAccessory } from './IRPlatformAccessory.js'
+import { IRLightAccessory } from './IRLightAccessory.js'
+import { IRFanAccessory } from './IRFanAccessory.js'
+import { IRAmpAccessory } from './IRAmpAccessory.js'
 
 export class IRPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service
@@ -38,12 +40,25 @@ export class IRPlatform implements DynamicPlatformPlugin {
   }
 
   async discoverDevices() {
-    const accessory = new IRPlatformAccessory(this, this.config)
-
+    const lightAccessory = new IRLightAccessory(this, this.config)
     try {
-      await accessory.init()
+      await lightAccessory.init()
     } catch (e) {
-      this.log.error('Cannot init ir')
+      this.log.error('Cannot init ir light')
+    }
+
+    const fanAccessory = new IRFanAccessory(this, this.config)
+    try {
+      await fanAccessory.init()
+    } catch (e) {
+      this.log.error('Cannot init ir fan')
+    }
+
+    const ampAccessory = new IRAmpAccessory(this, this.config)
+    try {
+      await ampAccessory.init()
+    } catch (e) {
+      this.log.error('Cannot init ir amp')
     }
   }
 }
