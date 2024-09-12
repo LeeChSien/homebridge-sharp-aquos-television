@@ -52,8 +52,8 @@ export class IRAmpAccessory {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, FIXED_ID)
 
     this.service =
-      this.accessory.getService(this.platform.Service.Speaker) ||
-      this.accessory.addService(this.platform.Service.Speaker)
+      this.accessory.getService(this.platform.Service.Switch) ||
+      this.accessory.addService(this.platform.Service.Switch)
 
     this.service.setCharacteristic(
       this.platform.Characteristic.Name,
