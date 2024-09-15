@@ -1,8 +1,9 @@
-import type {
-  PlatformAccessory,
-  Service,
-  PlatformConfig,
-  CharacteristicValue,
+import {
+  type PlatformAccessory,
+  type Service,
+  type PlatformConfig,
+  type CharacteristicValue,
+  Categories,
 } from 'homebridge'
 import { exec } from 'child_process'
 import fetch from 'node-fetch'
@@ -87,6 +88,7 @@ export class SpeakerAccessory {
       this.accessory = new this.platform.api.platformAccessory(
         this.configs.name as string,
         uuid,
+        Categories.SPEAKER,
       )
       this.accessory.context.device = this.configs
       this.platform.api.registerPlatformAccessories(
@@ -109,7 +111,7 @@ export class SpeakerAccessory {
       this.configs.name as string,
     )
 
-    /*
+    
     this.service
       .getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value) => {
@@ -120,8 +122,8 @@ export class SpeakerAccessory {
         }
       })
       .onGet(() => this.state.power === Power.ON)
-    */
-
+    
+    /*
     this.service
       .getCharacteristic(this.platform.Characteristic.CurrentMediaState)
       .onGet(() =>
@@ -145,6 +147,7 @@ export class SpeakerAccessory {
       .onSet(() =>
         this.convertVolumioStatusToCharacteristicValue(this.state.status),
       )
+    */
 
     this.service
       .getCharacteristic(this.platform.Characteristic.Mute)
@@ -213,8 +216,6 @@ export class SpeakerAccessory {
       .then((_state) => {
         const state = _state as VolumioState
 
-        this.platform.log.debug('Volumio state:', state)
-
         this.state.mute = state.mute ? Mute.ON : Mute.OFF
         this.service.updateCharacteristic(
           this.platform.Characteristic.Mute,
@@ -227,14 +228,13 @@ export class SpeakerAccessory {
           this.state.volume,
         )
 
+        /*
         this.state.status = state.status
         this.service.updateCharacteristic(
           this.platform.Characteristic.CurrentMediaState,
           this.convertVolumioStatusToCharacteristicValue(this.state.status),
         )
-
-        this.platform.log.debug('Volumio state synced')
-        this.platform.log.debug('Homebridge state:', this.state)
+        */
       })
       .catch(() => {
         this.platform.log.error('Cannot get volumio state')
