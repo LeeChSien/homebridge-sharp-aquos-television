@@ -71,8 +71,11 @@ export class IRLightAccessory {
     this.service
       .getCharacteristic(this.platform.Characteristic.On)
       .onSet(async (value) => {
-        this.state.power = value ? Power.ON : Power.OFF
-        exec('irsend SEND_ONCE livingroom_light TOGGLE')
+        const newState = value ? Power.ON : Power.OFF
+        if (newState !== this.state.power) { 
+          this.state.power = newState
+          exec('irsend SEND_ONCE livingroom_light TOGGLE')
+        }
       })
       .onGet(() => this.state.power === Power.ON)
     

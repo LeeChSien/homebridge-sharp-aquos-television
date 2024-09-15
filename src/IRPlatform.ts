@@ -10,7 +10,6 @@ import type {
 
 import { IRLightAccessory } from './IRLightAccessory.js'
 import { IRFanAccessory } from './IRFanAccessory.js'
-import { IRAmpAccessory } from './IRAmpAccessory.js'
 
 export class IRPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service
@@ -52,13 +51,6 @@ export class IRPlatform implements DynamicPlatformPlugin {
       await fanAccessory.init()
     } catch (e) {
       this.log.error('Cannot init ir fan')
-    }
-
-    const ampAccessory = new IRAmpAccessory(this, this.config)
-    try {
-      await ampAccessory.init()
-    } catch (e) {
-      this.log.error('Cannot init ir amp')
     }
   }
 }
