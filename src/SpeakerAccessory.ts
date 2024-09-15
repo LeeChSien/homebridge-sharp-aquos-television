@@ -129,11 +129,11 @@ export class SpeakerAccessory {
 
           if (this.state.mute === Mute.ON) {
             exec(
-              `curl ${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=mute`,
+              `curl '${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=mute'`,
             )
           } else {
             exec(
-              `curl ${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=unmute`,
+              `curl '${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=unmute'`,
             )
           }
         }
@@ -145,7 +145,7 @@ export class SpeakerAccessory {
       .onSet(async (value) => {
         this.state.volume = value as number
         exec(
-          `curl ${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=${value}`,
+          `curl '${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=${value}'`,
         )
       })
       .onGet(() => this.state.volume)
