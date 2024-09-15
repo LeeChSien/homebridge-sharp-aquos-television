@@ -5,6 +5,7 @@ import type {
   CharacteristicValue,
 } from 'homebridge'
 import { exec } from 'child_process'
+import fetch from 'node-fetch'
 
 import type { SpeakerPlatform } from './SpeakerPlatform.js'
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js'
@@ -52,7 +53,7 @@ interface VolumioState {
   volatile?: boolean
 }
 
-const FIXED_ID = 'fixed:qb-house-speaker'
+const FIXED_ID = 'fixed:qb-house:smart-speaker'
 
 export class SpeakerAccessory {
   public accessory!: PlatformAccessory
@@ -108,6 +109,7 @@ export class SpeakerAccessory {
       this.configs.name as string,
     )
 
+    /*
     this.service
       .getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value) => {
@@ -118,6 +120,25 @@ export class SpeakerAccessory {
         }
       })
       .onGet(() => this.state.power === Power.ON)
+    */
+
+    this.service.getCharacteristic(this.platform.Characteristic.CurrentMediaState)
+      .onGet(() => this.convertVolumioStatusToCharacteristicValue(this.state.status))
+
+    this.service.getCharacteristic(this.platform.Characteristic.TargetMediaState)
+    .onSet(async (value) => {
+      const newState = this.convertCharacteristicValueToVolumioStatus(value)
+      if (newState !== this.state.status) {
+        this.state.status = newState
+        fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=${newState}`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+        })
+      }
+    })
+      .onSet(() => this.convertVolumioStatusToCharacteristicValue(this.state.status))
 
     this.service
       .getCharacteristic(this.platform.Characteristic.Mute)
@@ -128,13 +149,19 @@ export class SpeakerAccessory {
           exec('irsend SEND_ONCE livingroom_amp MUTE')
 
           if (this.state.mute === Mute.ON) {
-            exec(
-              `curl '${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=mute'`,
-            )
+            fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=mute`, {
+              method: 'GET',
+              headers: {
+                Accept: 'application/json',
+              },
+            })
           } else {
-            exec(
-              `curl '${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=unmute'`,
-            )
+            fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=unmute`, {
+              method: 'GET',
+              headers: {
+                Accept: 'application/json',
+              },
+            })
           }
         }
       })
@@ -144,26 +171,14 @@ export class SpeakerAccessory {
       .getCharacteristic(this.platform.Characteristic.Volume)
       .onSet(async (value) => {
         this.state.volume = value as number
-        exec(
-          `curl '${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=${value}'`,
-        )
+        fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=${value}`, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+          },
+        })
       })
       .onGet(() => this.state.volume)
-
-    /*
-    this.service
-      .getCharacteristic(this.platform.Characteristic.CurrentMediaState)
-      .onSet(async (value) => {
-        const newState = this.convertCharacteristicValueToVolumioStatus(value)
-        if (newState !== this.state.status) {
-          this.state.status = newState
-          exec(`curl ${this.VOLUMIO_HOST}/api/v1/commands/?cmd=${newState}`)
-        }
-      })
-      .onGet(() =>
-        this.convertVolumioStatusToCharacteristicValue(this.state.status),
-      )
-    */
 
     this.syncVolumioState()
   }
@@ -173,34 +188,42 @@ export class SpeakerAccessory {
       return
     }
 
-    exec(`curl -s ${this.VOLUMIO_HOST}/api/v1/getstate`, (error, stdout) => {
-      if (error) {
-        this.platform.log.error('Cannot get volumio state')
-        return
-      }
-
-      const state = JSON.parse(stdout) as VolumioState
-
-      this.state.mute = state.mute ? Mute.ON : Mute.OFF
-      this.service.updateCharacteristic(
-        this.platform.Characteristic.Mute,
-        this.state.mute === Mute.ON,
-      )
-
-      this.state.volume = state.volume
-      this.service.updateCharacteristic(
-        this.platform.Characteristic.Volume,
-        this.state.volume,
-      )
-
-      /*
-      this.state.status = state.status
-      this.service.updateCharacteristic(
-        this.platform.Characteristic.CurrentMediaState,
-        this.convertVolumioStatusToCharacteristicValue(this.state.status),
-      )
-      */
+    fetch(`${this.VOLUMIO_HOST}/api/v1/getstate`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+      },
     })
+      .then((res) => res.json())
+      .then((_state) => {
+        const state = _state as VolumioState
+
+        this.platform.log.debug('Volumio state:', state)
+
+        this.state.mute = state.mute ? Mute.ON : Mute.OFF
+        this.service.updateCharacteristic(
+          this.platform.Characteristic.Mute,
+          this.state.mute === Mute.ON,
+        )
+
+        this.state.volume = state.volume
+        this.service.updateCharacteristic(
+          this.platform.Characteristic.Volume,
+          this.state.volume,
+        )
+
+        this.state.status = state.status
+        this.service.updateCharacteristic(
+          this.platform.Characteristic.CurrentMediaState,
+          this.convertVolumioStatusToCharacteristicValue(this.state.status),
+        )
+
+        this.platform.log.debug('Volumio state synced')
+        this.platform.log.debug('Homebridge state:', this.state)
+      })
+      .catch(() => {
+        this.platform.log.error('Cannot get volumio state')
+      })
   }
 
   convertVolumioStatusToCharacteristicValue(status: VolumioStatus) {
