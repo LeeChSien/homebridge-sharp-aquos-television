@@ -209,9 +209,7 @@ export class SpeakerAccessory {
         Accept: 'application/json',
       },
     })
-      // @ts-expect-error we don't care about the response type
       .then((res) => res.json())
-      // @ts-expect-error we don't care about the response type
       .then((_state) => {
         const state = _state as VolumioState
 
