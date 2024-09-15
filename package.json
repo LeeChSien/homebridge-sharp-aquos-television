@@ -1,10 +1,10 @@
 {
-  "name": "homebridge-qb-house-ir",
-  "displayName": "QB House IR",
+  "name": "homebridge-qb-house-speaker",
+  "displayName": "QB House Speaker",
   "type": "module",
   "version": "0.0.1",
   "private": true,
-  "description": "QB House IR",
+  "description": "QB House Speaker",
   "author": "Jason Lee",
   "license": "Apache-2.0",
   "homepage": "https://github.com/USERNAME/GITHUB_PROJECT_NAME#readme",

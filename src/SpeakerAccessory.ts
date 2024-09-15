@@ -1,7 +1,7 @@
 import type { PlatformAccessory, Service, PlatformConfig } from 'homebridge'
 import { exec } from 'child_process'
 
-import type { IRPlatform } from './IRPlatform.js'
+import type { SpeakerPlatform } from './SpeakerPlatform.js'
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings.js'
 
 enum Power {
@@ -9,25 +9,23 @@ enum Power {
   OFF = 'OFF',
 }
 
-enum LightLevel {
-  LEVEL_1 = 1,
-  LEVEL_2 = 2,
-  LEVEL_3 = 3,
-  LEVEL_4 = 4,
+enum Mute {
+  ON = 'ON',
+  OFF = 'OFF',
 }
 
-const FIXED_ID = 'fixed:ir:light'
+const FIXED_ID = 'fixed:speaker'
 
-export class IRLightAccessory {
+export class SpeakerAccessory {
   public accessory!: PlatformAccessory
   private service!: Service
   private state = {
     power: Power.OFF as Power,
-    level: LightLevel.LEVEL_1 as LightLevel,
+    mute: Mute.OFF as Mute,
   }
 
   constructor(
-    private readonly platform: IRPlatform,
+    private readonly platform: SpeakerPlatform,
     private readonly configs: PlatformConfig,
   ) {
     // don nothing.
@@ -60,42 +58,34 @@ export class IRLightAccessory {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, FIXED_ID)
 
     this.service =
-      this.accessory.getService(this.platform.Service.Lightbulb) ||
-      this.accessory.addService(this.platform.Service.Lightbulb)
+      this.accessory.getService(this.platform.Service.Speaker) ||
+      this.accessory.addService(this.platform.Service.Speaker)
 
     this.service.setCharacteristic(
       this.platform.Characteristic.Name,
-      `${this.configs.name} Ceiling Light`,
+      this.configs.name as string,
     )
 
     this.service
-      .getCharacteristic(this.platform.Characteristic.On)
+      .getCharacteristic(this.platform.Characteristic.Active)
       .onSet(async (value) => {
         const newState = value ? Power.ON : Power.OFF
-        if (newState !== this.state.power) { 
+        if (newState !== this.state.power) {
           this.state.power = newState
-          exec('irsend SEND_ONCE livingroom_light TOGGLE')
+          exec('irsend SEND_ONCE livingroom_amp TOGGLE')
         }
       })
       .onGet(() => this.state.power === Power.ON)
-    
-    /*
+
     this.service
-      .getCharacteristic(this.platform.Characteristic.Brightness)
-      .setProps({ minValue: 1, maxValue: 4, minStep: 1 })
+      .getCharacteristic(this.platform.Characteristic.Mute)
       .onSet(async (value) => {
-        const a = value as number
-        const b = this.state.level as number
-        const step = b > a ? b - a : b + 4 - a
-
-        for (let i = 0; i < step; i++) {
-          exec(`irsend SEND_ONCE livingroom_light LEVEL`)
-          await new Promise((resolve) => setTimeout(resolve, 1000))
+        const newState = value ? Mute.ON : Mute.OFF
+        if (newState !== this.state.mute) {
+          this.state.mute = newState
+          exec('irsend SEND_ONCE livingroom_amp MUTE')
         }
-
-        this.state.level = value as LightLevel
       })
-      .onGet(() => this.state.level)
-    */
+      .onGet(() => this.state.mute === Mute.ON)
   }
 }

@@ -1,12 +1,12 @@
-# homebridge-qb-house-ir
+# homebridge-qb-house-speake
 
 ## Usage
 
 ```js
 "platforms": [
   {
-    "platform": "QBHouseIR",
-    "name": "My light name"
+    "platform": "QBHouseSpeaker",
+    "name": "My Speaker"
   }
 ]
 ```

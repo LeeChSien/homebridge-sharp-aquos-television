@@ -1,11 +1,11 @@
 import type { API } from 'homebridge'
 
-import { IRPlatform } from './IRPlatform.js'
+import { SpeakerPlatform } from './SpeakerPlatform.js'
 import { PLATFORM_NAME } from './settings.js'
 
 /**
  * This method registers the platform with Homebridge
  */
 export default (api: API) => {
-  api.registerPlatform(PLATFORM_NAME, IRPlatform)
+  api.registerPlatform(PLATFORM_NAME, SpeakerPlatform)
 }

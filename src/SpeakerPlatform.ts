@@ -8,10 +8,9 @@ import type {
   Service,
 } from 'homebridge'
 
-import { IRLightAccessory } from './IRLightAccessory.js'
-import { IRFanAccessory } from './IRFanAccessory.js'
+import { SpeakerAccessory } from './SpeakerAccessory.js'
 
-export class IRPlatform implements DynamicPlatformPlugin {
+export class SpeakerPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service
   public readonly Characteristic: typeof Characteristic
 
@@ -39,18 +38,11 @@ export class IRPlatform implements DynamicPlatformPlugin {
   }
 
   async discoverDevices() {
-    const lightAccessory = new IRLightAccessory(this, this.config)
+    const speakerAccessory = new SpeakerAccessory(this, this.config)
     try {
-      await lightAccessory.init()
+      await speakerAccessory.init()
     } catch (e) {
-      this.log.error('Cannot init ir light')
-    }
-
-    const fanAccessory = new IRFanAccessory(this, this.config)
-    try {
-      await fanAccessory.init()
-    } catch (e) {
-      this.log.error('Cannot init ir fan')
+      this.log.error('Cannot init speaker')
     }
   }
 }
