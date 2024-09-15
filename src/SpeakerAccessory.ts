@@ -52,7 +52,7 @@ interface VolumioState {
   volatile?: boolean
 }
 
-const FIXED_ID = 'fixed:speaker'
+const FIXED_ID = 'fixed:qb-house-speaker'
 
 export class SpeakerAccessory {
   public accessory!: PlatformAccessory
@@ -100,8 +100,8 @@ export class SpeakerAccessory {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, FIXED_ID)
 
     this.service =
-      this.accessory.getService(this.platform.Service.SmartSpeaker) ||
-      this.accessory.addService(this.platform.Service.SmartSpeaker)
+      this.accessory.getService(this.platform.Service.Speaker) ||
+      this.accessory.addService(this.platform.Service.Speaker)
 
     this.service.setCharacteristic(
       this.platform.Characteristic.Name,
@@ -150,6 +150,7 @@ export class SpeakerAccessory {
       })
       .onGet(() => this.state.volume)
 
+    /*
     this.service
       .getCharacteristic(this.platform.Characteristic.CurrentMediaState)
       .onSet(async (value) => {
@@ -162,6 +163,7 @@ export class SpeakerAccessory {
       .onGet(() =>
         this.convertVolumioStatusToCharacteristicValue(this.state.status),
       )
+    */
 
     this.syncVolumioState()
   }
@@ -191,11 +193,13 @@ export class SpeakerAccessory {
         this.state.volume,
       )
 
+      /*
       this.state.status = state.status
       this.service.updateCharacteristic(
         this.platform.Characteristic.CurrentMediaState,
         this.convertVolumioStatusToCharacteristicValue(this.state.status),
       )
+      */
     })
   }
 
