@@ -122,23 +122,29 @@ export class SpeakerAccessory {
       .onGet(() => this.state.power === Power.ON)
     */
 
-    this.service.getCharacteristic(this.platform.Characteristic.CurrentMediaState)
-      .onGet(() => this.convertVolumioStatusToCharacteristicValue(this.state.status))
+    this.service
+      .getCharacteristic(this.platform.Characteristic.CurrentMediaState)
+      .onGet(() =>
+        this.convertVolumioStatusToCharacteristicValue(this.state.status),
+      )
 
-    this.service.getCharacteristic(this.platform.Characteristic.TargetMediaState)
-    .onSet(async (value) => {
-      const newState = this.convertCharacteristicValueToVolumioStatus(value)
-      if (newState !== this.state.status) {
-        this.state.status = newState
-        fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=${newState}`, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-          },
-        })
-      }
-    })
-      .onSet(() => this.convertVolumioStatusToCharacteristicValue(this.state.status))
+    this.service
+      .getCharacteristic(this.platform.Characteristic.TargetMediaState)
+      .onSet(async (value) => {
+        const newState = this.convertCharacteristicValueToVolumioStatus(value)
+        if (newState !== this.state.status) {
+          this.state.status = newState
+          fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=${newState}`, {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+            },
+          })
+        }
+      })
+      .onSet(() =>
+        this.convertVolumioStatusToCharacteristicValue(this.state.status),
+      )
 
     this.service
       .getCharacteristic(this.platform.Characteristic.Mute)
@@ -149,19 +155,25 @@ export class SpeakerAccessory {
           exec('irsend SEND_ONCE livingroom_amp MUTE')
 
           if (this.state.mute === Mute.ON) {
-            fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=mute`, {
-              method: 'GET',
-              headers: {
-                Accept: 'application/json',
+            fetch(
+              `${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=mute`,
+              {
+                method: 'GET',
+                headers: {
+                  Accept: 'application/json',
+                },
               },
-            })
+            )
           } else {
-            fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=unmute`, {
-              method: 'GET',
-              headers: {
-                Accept: 'application/json',
+            fetch(
+              `${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=unmute`,
+              {
+                method: 'GET',
+                headers: {
+                  Accept: 'application/json',
+                },
               },
-            })
+            )
           }
         }
       })
@@ -171,12 +183,15 @@ export class SpeakerAccessory {
       .getCharacteristic(this.platform.Characteristic.Volume)
       .onSet(async (value) => {
         this.state.volume = value as number
-        fetch(`${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=${value}`, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
+        fetch(
+          `${this.VOLUMIO_HOST}/api/v1/commands/?cmd=volume&volume=${value}`,
+          {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+            },
           },
-        })
+        )
       })
       .onGet(() => this.state.volume)
 
@@ -194,7 +209,9 @@ export class SpeakerAccessory {
         Accept: 'application/json',
       },
     })
+      // @ts-expect-error we don't care about the response type
       .then((res) => res.json())
+      // @ts-expect-error we don't care about the response type
       .then((_state) => {
         const state = _state as VolumioState
 
