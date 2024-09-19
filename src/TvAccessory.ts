@@ -6,7 +6,6 @@ import {
 } from 'homebridge'
 
 import type { TvPlatform } from './TvPlatform.js'
-import { PLATFORM_NAME } from './settings.js'
 import { TvController } from './TvController.js'
 
 enum Power {
@@ -50,12 +49,13 @@ export class TvAccessory extends TvController {
       this.accessory = new this.platform.api.platformAccessory(
         this.description.friendlyName,
         uuid,
-        Categories.TELEVISION,
       )
+
+      this.accessory.category = Categories.TELEVISION
+
       this.accessory.context.device = this.configs
-      this.platform.api.registerPlatformAccessories(
+      this.platform.api.publishExternalAccessories(
         this.description.friendlyName,
-        PLATFORM_NAME,
         [this.accessory],
       )
     }
