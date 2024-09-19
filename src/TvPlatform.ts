@@ -8,9 +8,9 @@ import type {
   Service,
 } from 'homebridge'
 
-import { SpeakerAccessory } from './SpeakerAccessory.js'
+import { TvAccessory } from './TvAccessory.js'
 
-export class SpeakerPlatform implements DynamicPlatformPlugin {
+export class TvPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service
   public readonly Characteristic: typeof Characteristic
 
@@ -38,11 +38,11 @@ export class SpeakerPlatform implements DynamicPlatformPlugin {
   }
 
   async discoverDevices() {
-    const speakerAccessory = new SpeakerAccessory(this, this.config)
+    const tvAccessory = new TvAccessory(this, this.config)
     try {
-      await speakerAccessory.init()
+      await tvAccessory.init()
     } catch (e) {
-      this.log.error('Cannot init speaker')
+      this.log.error('Cannot init TV')
     }
   }
 }

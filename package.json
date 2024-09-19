@@ -1,10 +1,10 @@
 {
-  "name": "homebridge-qb-house-speaker",
-  "displayName": "QB House Speaker",
+  "name": "homebridge-sharp-aquos-television",
+  "displayName": "Sharp Aquos Television",
   "type": "module",
   "version": "0.0.1",
   "private": true,
-  "description": "QB House Speaker",
+  "description": "Sharp Aquos Television",
   "author": "Jason Lee",
   "license": "Apache-2.0",
   "homepage": "https://github.com/USERNAME/GITHUB_PROJECT_NAME#readme",
@@ -51,6 +51,7 @@
     "typescript-eslint": "^8.0.1"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "xml2js": "^0.6.2"
   }
 }
