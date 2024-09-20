@@ -6,7 +6,7 @@ import {
 } from 'homebridge'
 
 import type { TvPlatform } from './TvPlatform.js'
-import { TvController } from './TvController.js'
+import { TvController, Channel } from './TvController.js'
 
 enum Power {
   ON = 'ON',
@@ -25,8 +25,9 @@ export class TvAccessory extends TvController {
   private state = {
     power: Power.OFF as Power,
     mute: Mute.OFF as Mute,
-    input: 999999, // 999999 is a special value to indicate no input
+    identifier: 999999, // 999999 is a special value to indicate no input
   }
+  private identifiers = new Map<number, Record<string, string>>()
 
   constructor(
     private readonly platform: TvPlatform,
@@ -51,6 +52,7 @@ export class TvAccessory extends TvController {
         uuid,
       )
 
+      this.accessory.displayName = this.description.friendlyName
       this.accessory.category = Categories.TELEVISION
 
       this.accessory.context.device = this.configs
@@ -90,6 +92,10 @@ export class TvAccessory extends TvController {
     this.tvService
       .setCharacteristic(
         this.platform.Characteristic.ConfiguredName,
+        this.description.friendlyName,
+      )
+      .setCharacteristic(
+        this.platform.Characteristic.Name,
         this.description.friendlyName,
       )
       .setCharacteristic(
@@ -156,26 +162,40 @@ export class TvAccessory extends TvController {
     this.tvService
       .getCharacteristic(this.platform.Characteristic.ActiveIdentifier)
       .onSet((value) => {
-        const _input = value as number
-        if (0 <= _input && _input < 7) {
-          this.state.input = _input
-          if (_input === 0) {
-            this.setInputTV()
-          } else {
-            this.setInput(_input)
+        const identifier = value as number
+        if (this.identifiers.has(identifier)) {
+          this.state.identifier = identifier
+          const channel = this.identifiers.get(identifier)
+
+          if (channel?.application) {
+            if (channel.application === 'Netflix') {
+              this.sendNetflix()
+            } else if (channel.application === 'YouTube') {
+              this.sendYouTube()
+            }
+          } else if (channel?.command) {
+            this.sendCommand({
+              Command: (channel as unknown as Channel).command,
+            })
           }
         }
       })
-      .onGet(() => this.state.input)
+      .onGet(() => this.state.identifier)
 
     this.speakerService =
-      this.accessory.getService(this.platform.Service.Television) ||
-      this.accessory.addService(this.platform.Service.Television)
+      this.accessory.getService(this.platform.Service.TelevisionSpeaker) ||
+      this.accessory.addService(this.platform.Service.TelevisionSpeaker)
 
-    this.speakerService.setCharacteristic(
-      this.platform.Characteristic.ConfiguredName,
-      this.description.friendlyName + ' Speaker',
-    )
+    this.speakerService
+      .setCharacteristic(
+        this.platform.Characteristic.ConfiguredName,
+        this.description.friendlyName + ' Speaker',
+      )
+      .setCharacteristic(
+        this.platform.Characteristic.Name,
+        this.description.friendlyName + ' Speaker',
+      )
+
 
     this.speakerService
       .getCharacteristic(this.platform.Characteristic.Mute)
@@ -207,5 +227,122 @@ export class TvAccessory extends TvController {
 
     this.tvService.addLinkedService(this.speakerService)
     this.tvService.addLinkedService(informationService)
+
+    this.setupApplication('Netflix')
+    this.setupApplication('YouTube')
+    this.channels.forEach((channel) => this.setupChannel(channel))
+  }
+
+  setupChannel(channel: Channel) {
+    const identifier = this.identifiers.size
+    this.identifiers.set(
+      identifier,
+      channel as unknown as Record<string, string>,
+    )
+
+    const service = new this.platform.Service.InputSource(
+      this.accessory.displayName + channel.name,
+      channel.name,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.Identifier,
+      identifier,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.ConfiguredName,
+      channel.name,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.IsConfigured,
+      this.platform.Characteristic.IsConfigured.CONFIGURED,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.InputSourceType,
+      this.platform.Characteristic.InputSourceType.TUNER,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.CurrentVisibilityState,
+      this.platform.Characteristic.CurrentVisibilityState.SHOWN,
+    )
+
+    service
+      .getCharacteristic(this.platform.Characteristic.ConfiguredName)
+      .on('set', (name, callback) => {
+        callback(null, name)
+      })
+
+    this.accessory.addService(service)
+    this.tvService!.addLinkedService(service)
+  }
+
+  setupApplication(application: string) {
+    const identifier = this.identifiers.size
+    this.identifiers.set(identifier, { application })
+
+    const service = new this.platform.Service.InputSource(
+      this.accessory.displayName + application,
+      application,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.Identifier,
+      identifier,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.ConfiguredName,
+      application,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.IsConfigured,
+      this.platform.Characteristic.IsConfigured.CONFIGURED,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.InputSourceType,
+      this.platform.Characteristic.InputSourceType.APPLICATION,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.CurrentVisibilityState,
+      this.platform.Characteristic.CurrentVisibilityState.SHOWN,
+    )
+
+    service
+      .getCharacteristic(this.platform.Characteristic.ConfiguredName)
+      .on('set', (name, callback) => {
+        callback(null, name)
+      })
+
+    this.accessory.addService(service)
+    this.tvService!.addLinkedService(service)
+  }
+
+  async sendNetflix() {
+    this.sendHome()
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+    this.sendHome()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendKeyRight()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendKeyRight()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendSelect()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendSelect()
+  }
+
+  async sendYouTube() {
+    this.sendHome()
+    await new Promise((resolve) => setTimeout(resolve, 3000))
+    this.sendHome()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendKeyRight()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendKeyRight()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendKeyRight()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendKeyRight()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendSelect()
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    this.sendSelect()
   }
 }

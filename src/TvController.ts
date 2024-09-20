@@ -14,7 +14,7 @@ interface Description {
   udn: string
 }
 
-interface Channel {
+export interface Channel {
   rcNumber: string
   name: string
   chNumber: string
