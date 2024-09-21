@@ -166,6 +166,8 @@ export class TvAccessory extends TvController {
             this.sendCommand({
               Command: (channel as unknown as Channel).command,
             })
+          } else if (channel?.input) {
+            this.setInput(Number(channel.input))
           }
         }
       })
@@ -216,6 +218,9 @@ export class TvAccessory extends TvController {
     this.setupApplication('YouTube')
 
     this.channels.forEach((channel) => this.setupChannel(channel))
+    for (let i = 1; i <= 6; i++) {
+      this.setupInput(i.toString())
+    }
   }
 
   setupChannel(channel: Channel) {
@@ -225,9 +230,10 @@ export class TvAccessory extends TvController {
       channel as unknown as Record<string, string>,
     )
 
+    const channelName = `Channel: ${channel.chNumber} ${channel.name}`
     const service = new this.platform.Service.InputSource(
-      this.accessory.displayName + channel.name,
-      channel.name,
+      this.accessory.displayName + channelName,
+      channelName,
     )
     service.setCharacteristic(
       this.platform.Characteristic.Identifier,
@@ -235,9 +241,9 @@ export class TvAccessory extends TvController {
     )
     service.setCharacteristic(
       this.platform.Characteristic.ConfiguredName,
-      channel.name,
+      channelName,
     )
-    service.setCharacteristic(this.platform.Characteristic.Name, channel.name)
+    service.setCharacteristic(this.platform.Characteristic.Name, channelName)
     service.setCharacteristic(
       this.platform.Characteristic.IsConfigured,
       this.platform.Characteristic.IsConfigured.CONFIGURED,
@@ -265,9 +271,10 @@ export class TvAccessory extends TvController {
     const identifier = this.identifiers.size
     this.identifiers.set(identifier, { application })
 
+    const applicationName = `App: ${application}`
     const service = new this.platform.Service.InputSource(
-      this.accessory.displayName + application,
-      application,
+      this.accessory.displayName + applicationName,
+      applicationName,
     )
     service.setCharacteristic(
       this.platform.Characteristic.Identifier,
@@ -275,9 +282,12 @@ export class TvAccessory extends TvController {
     )
     service.setCharacteristic(
       this.platform.Characteristic.ConfiguredName,
-      application,
+      applicationName,
     )
-    service.setCharacteristic(this.platform.Characteristic.Name, application)
+    service.setCharacteristic(
+      this.platform.Characteristic.Name,
+      applicationName,
+    )
     service.setCharacteristic(
       this.platform.Characteristic.IsConfigured,
       this.platform.Characteristic.IsConfigured.CONFIGURED,
@@ -301,9 +311,50 @@ export class TvAccessory extends TvController {
     this.tvService!.addLinkedService(service)
   }
 
+  setupInput(number: string) {
+    const identifier = this.identifiers.size
+    this.identifiers.set(identifier, { input: number })
+
+    const inputName = `HDML Input ${number}`
+    const service = new this.platform.Service.InputSource(
+      this.accessory.displayName + inputName,
+      inputName,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.Identifier,
+      identifier,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.ConfiguredName,
+      inputName,
+    )
+    service.setCharacteristic(this.platform.Characteristic.Name, inputName)
+    service.setCharacteristic(
+      this.platform.Characteristic.IsConfigured,
+      this.platform.Characteristic.IsConfigured.CONFIGURED,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.InputSourceType,
+      this.platform.Characteristic.InputSourceType.HDMI,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.CurrentVisibilityState,
+      this.platform.Characteristic.CurrentVisibilityState.SHOWN,
+    )
+
+    service
+      .getCharacteristic(this.platform.Characteristic.ConfiguredName)
+      .on('set', (name, callback) => {
+        callback(null, name)
+      })
+
+    this.accessory.addService(service)
+    this.tvService!.addLinkedService(service)
+  }
+
   async sendNetflix() {
     // modify this method to send the command to open Netflix for your TV
-    this.sendHome()
+    await this.sendHome()
     await new Promise((resolve) => setTimeout(resolve, 3000))
     await this.sendHome()
     await this.sendKeyRight()
@@ -314,7 +365,7 @@ export class TvAccessory extends TvController {
 
   async sendYouTube() {
     // modify this method to send the command to open YouTube for your TV
-    this.sendHome()
+    await this.sendHome()
     await new Promise((resolve) => setTimeout(resolve, 3000))
     await this.sendHome()
     await this.sendKeyRight()
