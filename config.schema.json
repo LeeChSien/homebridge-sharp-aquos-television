@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "SharpAquosTelevision",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,7 +9,37 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Sharp Aquos TV"
+      },
+      "ip": {
+        "title": "ip",
+        "type": "string",
+        "required": true,
+        "default": "192.168.11.14"
+      },
+      "port": {
+        "title": "ip",
+        "type": "string",
+        "required": true,
+        "default": "12346"
+      },
+      "portDescription": {
+        "title": "ip",
+        "type": "string",
+        "required": true,
+        "default": "8008"
+      },
+      "id": {
+        "title": "id",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+      "password": {
+        "title": "password",
+        "type": "string",
+        "required": false,
+        "default": ""
       }
     }
   }
