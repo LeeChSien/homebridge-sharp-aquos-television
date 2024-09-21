@@ -2,7 +2,7 @@
   "name": "homebridge-sharp-aquos-television",
   "displayName": "Sharp Aquos Television",
   "type": "module",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Sharp Aquos Television",
   "author": "Jason Lee",
   "license": "Apache-2.0",

@@ -12,31 +12,31 @@
         "default": "Sharp Aquos TV"
       },
       "ip": {
-        "title": "ip",
+        "title": "IP",
         "type": "string",
         "required": true,
         "default": "192.168.11.14"
       },
       "port": {
-        "title": "ip",
+        "title": "Port",
         "type": "string",
         "required": true,
         "default": "12346"
       },
       "portDescription": {
-        "title": "ip",
+        "title": "Port for Description",
         "type": "string",
         "required": true,
         "default": "8008"
       },
       "id": {
-        "title": "id",
+        "title": "ID",
         "type": "string",
         "required": false,
         "default": ""
       },
       "password": {
-        "title": "password",
+        "title": "Password",
         "type": "string",
         "required": false,
         "default": ""
