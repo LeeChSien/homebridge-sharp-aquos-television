@@ -32,7 +32,9 @@ export class TvAccessory extends TvController {
   async init() {
     await Promise.all([this.fetchDescription(), this.fetchChannels()])
 
-    const uuid = this.platform.api.hap.uuid.generate(this.description.udn)
+    const uuid = this.platform.api.hap.uuid.generate(
+      this.description.udn + 'TV',
+    )
     const existingAccessory = this.platform.accessories.find(
       (accessory) => accessory.UUID === uuid,
     )
@@ -257,12 +259,6 @@ export class TvAccessory extends TvController {
       this.platform.Characteristic.CurrentVisibilityState.SHOWN,
     )
 
-    service
-      .getCharacteristic(this.platform.Characteristic.ConfiguredName)
-      .on('set', (name, callback) => {
-        callback(null, name)
-      })
-
     this.accessory.addService(service)
     this.tvService!.addLinkedService(service)
   }
@@ -301,12 +297,6 @@ export class TvAccessory extends TvController {
       this.platform.Characteristic.CurrentVisibilityState.SHOWN,
     )
 
-    service
-      .getCharacteristic(this.platform.Characteristic.ConfiguredName)
-      .on('set', (name, callback) => {
-        callback(null, name)
-      })
-
     this.accessory.addService(service)
     this.tvService!.addLinkedService(service)
   }
@@ -341,12 +331,6 @@ export class TvAccessory extends TvController {
       this.platform.Characteristic.CurrentVisibilityState,
       this.platform.Characteristic.CurrentVisibilityState.SHOWN,
     )
-
-    service
-      .getCharacteristic(this.platform.Characteristic.ConfiguredName)
-      .on('set', (name, callback) => {
-        callback(null, name)
-      })
 
     this.accessory.addService(service)
     this.tvService!.addLinkedService(service)
