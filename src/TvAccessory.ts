@@ -1,8 +1,8 @@
 import {
   type PlatformAccessory,
-  type Service,
   type PlatformConfig,
   Categories,
+  Service,
 } from 'homebridge'
 
 import type { TvPlatform } from './TvPlatform.js'
@@ -225,6 +225,27 @@ export class TvAccessory extends TvController {
     }
   }
 
+  setupInputSource(service: Service, identifier: number, name: string) {
+    service.setCharacteristic(
+      this.platform.Characteristic.Identifier,
+      identifier,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.DisplayOrder,
+      identifier,
+    )
+    service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name)
+    service.setCharacteristic(this.platform.Characteristic.Name, name)
+    service.setCharacteristic(
+      this.platform.Characteristic.IsConfigured,
+      this.platform.Characteristic.IsConfigured.CONFIGURED,
+    )
+    service.setCharacteristic(
+      this.platform.Characteristic.CurrentVisibilityState,
+      this.platform.Characteristic.CurrentVisibilityState.SHOWN,
+    )
+  }
+
   setupChannel(channel: Channel) {
     const identifier = this.identifiers.size
     this.identifiers.set(
@@ -232,33 +253,16 @@ export class TvAccessory extends TvController {
       channel as unknown as Record<string, string>,
     )
 
-    const channelName = `Channel: ${channel.chNumber} ${channel.name}`
+    const channelName = `${channel.chNumber}: ${channel.name}`
     const service = new this.platform.Service.InputSource(
       this.accessory.displayName + channelName,
       channelName,
     )
-    service.setCharacteristic(
-      this.platform.Characteristic.Identifier,
-      identifier,
-    )
-    service.setCharacteristic(
-      this.platform.Characteristic.ConfiguredName,
-      channelName,
-    )
-    service.setCharacteristic(this.platform.Characteristic.Name, channelName)
-    service.setCharacteristic(
-      this.platform.Characteristic.IsConfigured,
-      this.platform.Characteristic.IsConfigured.CONFIGURED,
-    )
+    this.setupInputSource(service, identifier, channelName)
     service.setCharacteristic(
       this.platform.Characteristic.InputSourceType,
       this.platform.Characteristic.InputSourceType.TUNER,
     )
-    service.setCharacteristic(
-      this.platform.Characteristic.CurrentVisibilityState,
-      this.platform.Characteristic.CurrentVisibilityState.SHOWN,
-    )
-
     this.accessory.addService(service)
     this.tvService!.addLinkedService(service)
   }
@@ -267,36 +271,16 @@ export class TvAccessory extends TvController {
     const identifier = this.identifiers.size
     this.identifiers.set(identifier, { application })
 
-    const applicationName = `App: ${application}`
+    const applicationName = `${application} App`
     const service = new this.platform.Service.InputSource(
       this.accessory.displayName + applicationName,
       applicationName,
     )
-    service.setCharacteristic(
-      this.platform.Characteristic.Identifier,
-      identifier,
-    )
-    service.setCharacteristic(
-      this.platform.Characteristic.ConfiguredName,
-      applicationName,
-    )
-    service.setCharacteristic(
-      this.platform.Characteristic.Name,
-      applicationName,
-    )
-    service.setCharacteristic(
-      this.platform.Characteristic.IsConfigured,
-      this.platform.Characteristic.IsConfigured.CONFIGURED,
-    )
+    this.setupInputSource(service, identifier, applicationName)
     service.setCharacteristic(
       this.platform.Characteristic.InputSourceType,
       this.platform.Characteristic.InputSourceType.APPLICATION,
     )
-    service.setCharacteristic(
-      this.platform.Characteristic.CurrentVisibilityState,
-      this.platform.Characteristic.CurrentVisibilityState.SHOWN,
-    )
-
     this.accessory.addService(service)
     this.tvService!.addLinkedService(service)
   }
@@ -310,28 +294,11 @@ export class TvAccessory extends TvController {
       this.accessory.displayName + inputName,
       inputName,
     )
-    service.setCharacteristic(
-      this.platform.Characteristic.Identifier,
-      identifier,
-    )
-    service.setCharacteristic(
-      this.platform.Characteristic.ConfiguredName,
-      inputName,
-    )
-    service.setCharacteristic(this.platform.Characteristic.Name, inputName)
-    service.setCharacteristic(
-      this.platform.Characteristic.IsConfigured,
-      this.platform.Characteristic.IsConfigured.CONFIGURED,
-    )
+    this.setupInputSource(service, identifier, inputName)
     service.setCharacteristic(
       this.platform.Characteristic.InputSourceType,
       this.platform.Characteristic.InputSourceType.HDMI,
     )
-    service.setCharacteristic(
-      this.platform.Characteristic.CurrentVisibilityState,
-      this.platform.Characteristic.CurrentVisibilityState.SHOWN,
-    )
-
     this.accessory.addService(service)
     this.tvService!.addLinkedService(service)
   }
