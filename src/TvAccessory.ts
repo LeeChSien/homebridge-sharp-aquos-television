@@ -32,9 +32,7 @@ export class TvAccessory extends TvController {
   async init() {
     await Promise.all([this.fetchDescription(), this.fetchChannels()])
 
-    const uuid = this.platform.api.hap.uuid.generate(
-      this.description.udn + 'TV',
-    )
+    const uuid = this.platform.api.hap.uuid.generate(this.description.udn)
     const existingAccessory = this.platform.accessories.find(
       (accessory) => accessory.UUID === uuid,
     )
