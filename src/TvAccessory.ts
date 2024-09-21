@@ -33,7 +33,7 @@ export class TvAccessory extends TvController {
     await Promise.all([this.fetchDescription(), this.fetchChannels()])
 
     const uuid = this.platform.api.hap.uuid.generate(
-      this.description.udn.replace('uuid:', '111'),
+      this.description.udn.replace('uuid:', ''),
     )
     const existingAccessory = this.platform.accessories.find(
       (accessory) => accessory.UUID === uuid,
@@ -228,10 +228,6 @@ export class TvAccessory extends TvController {
   setupInputSource(service: Service, identifier: number, name: string) {
     service.setCharacteristic(
       this.platform.Characteristic.Identifier,
-      identifier,
-    )
-    service.setCharacteristic(
-      this.platform.Characteristic.DisplayOrder,
       identifier,
     )
     service.setCharacteristic(this.platform.Characteristic.ConfiguredName, name)
