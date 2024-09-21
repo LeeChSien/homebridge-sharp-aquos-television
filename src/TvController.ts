@@ -1,34 +1,16 @@
 import xml2js from 'xml2js'
-import fetch from 'node-fetch'
+import fetch, { Response } from 'node-fetch'
+import { Configs, Description, Channel } from './types.js'
 
-interface Configs {
-  ip: string
-  touchPort: number
-  port: number
-}
-
-interface Description {
-  friendlyName: string
-  manufacturer: string
-  modelName: string
-  udn: string
-}
-
-export interface Channel {
-  rcNumber: string
-  name: string
-  chNumber: string
-  skip: string
-  eventTitle: string
-  command: string
-}
-
-const subPathIPControl = '/control/X_IPcontrol'
+const IP_CONTROL_PATH = '/control/X_IPcontrol'
+const DEVICE_DESC_PATH = '/ssdp/device-desc.xml'
 
 export class TvController {
   ip!: string
-  touchPort!: number
   port!: number
+  portDescription!: number
+  id?: string
+  password?: string
   endpoint!: string
   description = {
     friendlyName: '',
@@ -40,27 +22,33 @@ export class TvController {
 
   constructor(configs: Configs) {
     this.ip = configs.ip
-    this.touchPort = configs.touchPort
+    this.portDescription = configs.portDescription
     this.port = configs.port
     this.endpoint = `http://${this.ip}:${this.port}`
+    this.id = configs.id || ''
+    this.password = configs.password || ''
   }
 
   async fetchDescription(): Promise<void> {
     const response = await fetch(
-      `http://${this.ip}:${this.touchPort}/ssdp/device-desc.xml`,
+      `http://${this.ip}:${this.portDescription}${DEVICE_DESC_PATH}`,
     )
     const body = await response.text()
     const xmlParser = new xml2js.Parser()
     const description = await xmlParser.parseStringPromise(body)
 
-    this.description.friendlyName = description.root.device[0].friendlyName[0]
-    this.description.manufacturer = description.root.device[0].manufacturer[0]
-    this.description.modelName = description.root.device[0].modelName[0]
-    this.description.udn = description.root.device[0].UDN[0]
+    this.description = {
+      friendlyName: description.root.device[0].friendlyName[0],
+      manufacturer: description.root.device[0].manufacturer[0],
+      modelName: description.root.device[0].modelName[0],
+      udn: description.root.device[0].UDN[0],
+    }
   }
 
-  async fetchChannels(): Promise<void> {
-    // create XML payload and post it to the TV
+  async sendCommand(
+    content: Record<string, string>,
+    options = { getStatus: false, postDelay: 0 },
+  ): Promise<Response> {
     const xmlBuilder = new xml2js.Builder()
     const payload = xmlBuilder.buildObject({
       's:Envelope': {
@@ -69,60 +57,7 @@ export class TvController {
           's:encodingStyle': 'http://schemas.xmlsoap.org/soap/encoding/',
         },
         's:Body': {
-          'u:X_GetTvStatus': {
-            $: {
-              'xmlns:u': 'urn:schemas-sharp-co-jp:service:X_IPcontrol:1',
-            },
-            InfoName: 'TDSvChList',
-            ID: '',
-            Pass: '',
-          },
-        },
-      },
-    })
-
-    const response = await fetch(`${this.endpoint}${subPathIPControl}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/xml; charset="utf-8"',
-        SOAPACTION:
-          '"urn:schemas-sharp-co-jp:service:X_IPcontrol:1#X_GetTvStatus"',
-      },
-      body: payload.toString(),
-    })
-    const body = await response.text()
-    const xmlParser = new xml2js.Parser()
-    const programInformation = await xmlParser.parseStringPromise(body)
-
-    const listBody =
-      programInformation['s:Envelope']['s:Body'][0][
-        'u:X_GetTvStatusResponse'
-      ][0].Result[0]
-
-    const list = await xmlParser.parseStringPromise(listBody)
-    list.ChList.Ch.forEach((ch: Record<string, Array<string>>) => {
-      this.channels.push({
-        rcNumber: ch.RcNumber[0],
-        name: ch.Name[0],
-        chNumber: ch.ChNumber[0],
-        skip: ch.Skip[0],
-        eventTitle: ch.EventTitle[0],
-        command: ch.Command[0],
-      })
-    })
-  }
-
-  async sendCommand(content: Record<string, string>): Promise<void> {
-    // create XML payload and post it to the TV
-    const xmlBuilder = new xml2js.Builder()
-    const payload = xmlBuilder.buildObject({
-      's:Envelope': {
-        $: {
-          'xmlns:s': 'http://schemas.xmlsoap.org/soap/envelope/',
-          's:encodingStyle': 'http://schemas.xmlsoap.org/soap/encoding/',
-        },
-        's:Body': {
-          'u:X_SetControlCommand': {
+          [options.getStatus ? 'u:X_GetTvStatus' : 'u:X_SetControlCommand']: {
             $: {
               'xmlns:u': 'urn:schemas-sharp-co-jp:service:X_IPcontrol:1',
             },
@@ -134,14 +69,46 @@ export class TvController {
       },
     })
 
-    await fetch(`${this.endpoint}${subPathIPControl}`, {
+    const response = await fetch(`${this.endpoint}${IP_CONTROL_PATH}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'text/xml; charset="utf-8"',
-        SOAPACTION:
-          '"urn:schemas-sharp-co-jp:service:X_IPcontrol:1#X_SetControlCommand"',
+        SOAPACTION: options.getStatus
+          ? 'urn:schemas-sharp-co-jp:service:X_IPcontrol:1#X_GetTvStatus'
+          : 'urn:schemas-sharp-co-jp:service:X_IPcontrol:1#X_SetControlCommand',
       },
       body: payload.toString(),
+    })
+    await new Promise((resolve) => setTimeout(resolve, options.postDelay))
+    return response
+  }
+
+  async fetchChannels(): Promise<void> {
+    const response = await this.sendCommand(
+      {
+        InfoName: 'TDSvChList',
+      },
+      { getStatus: true, postDelay: 0 },
+    )
+    const body = await response.text()
+    const xmlParser = new xml2js.Parser()
+    const programInformation = await xmlParser.parseStringPromise(body)
+
+    const listBody =
+      programInformation['s:Envelope']['s:Body'][0][
+        'u:X_GetTvStatusResponse'
+      ][0].Result[0]
+    const list = await xmlParser.parseStringPromise(listBody)
+
+    list.ChList.Ch.forEach((ch: Record<string, Array<string>>) => {
+      this.channels.push({
+        rcNumber: ch.RcNumber[0],
+        name: ch.Name[0],
+        chNumber: ch.ChNumber[0],
+        skip: ch.Skip[0],
+        eventTitle: ch.EventTitle[0],
+        command: ch.Command[0],
+      })
     })
   }
 
@@ -176,9 +143,12 @@ export class TvController {
   }
 
   async sendHome(): Promise<void> {
-    await this.sendCommand({
-      Command: 'IRCO02BB',
-    })
+    await this.sendCommand(
+      {
+        Command: 'IRCO02BB',
+      },
+      { getStatus: false, postDelay: 500 },
+    )
   }
 
   async sendMute(): Promise<void> {
@@ -224,9 +194,12 @@ export class TvController {
   }
 
   async sendKeyRight(): Promise<void> {
-    await this.sendCommand({
-      Command: 'IRCO01D8',
-    })
+    await this.sendCommand(
+      {
+        Command: 'IRCO01D8',
+      },
+      { getStatus: false, postDelay: 500 },
+    )
   }
 
   async sendKeyLeft(): Promise<void> {
@@ -242,9 +215,12 @@ export class TvController {
   }
 
   async sendSelect(): Promise<void> {
-    await this.sendCommand({
-      Command: 'IRCO0152',
-    })
+    await this.sendCommand(
+      {
+        Command: 'IRCO0152',
+      },
+      { getStatus: false, postDelay: 500 },
+    )
   }
 
   async sendBack(): Promise<void> {

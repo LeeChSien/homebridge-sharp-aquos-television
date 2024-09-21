@@ -3,17 +3,16 @@
   "displayName": "Sharp Aquos Television",
   "type": "module",
   "version": "0.0.1",
-  "private": true,
   "description": "Sharp Aquos Television",
   "author": "Jason Lee",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/USERNAME/GITHUB_PROJECT_NAME#readme",
+  "homepage": "https://github.com/LeeChSien/homebridge-sharp-aquos-television",
   "repository": {
     "type": "git",
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME.git"
+    "url": "https://github.com/LeeChSien/homebridge-sharp-aquos-television.git"
   },
   "bugs": {
-    "url": "https://github.com/USERNAME/GITHUB_PROJECT_NAME/issues"
+    "url": "https://github.com/LeeChSien/homebridge-sharp-aquos-television/issues"
   },
   "keywords": [
     "homebridge-plugin"
@@ -28,12 +27,10 @@
     "lint": "eslint . --max-warnings=0",
     "prepublishOnly": "npm run lint && npm run build",
     "watch": "npm run build && npm link && nodemon",
-    "test": "jest --passWithNoTests",
-    "play": "node ./dist/playground.js"
+    "test": "jest --passWithNoTests"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
-    "@types/crypto-js": "^4.2.2",
     "@types/eslint__js": "^8.42.3",
     "@types/jest": "^29.5.12",
     "@types/node": "^22.2.0",

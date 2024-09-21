@@ -6,17 +6,8 @@ import {
 } from 'homebridge'
 
 import type { TvPlatform } from './TvPlatform.js'
-import { TvController, Channel } from './TvController.js'
-
-enum Power {
-  ON = 'ON',
-  OFF = 'OFF',
-}
-
-enum Mute {
-  ON = 'ON',
-  OFF = 'OFF',
-}
+import { TvController } from './TvController.js'
+import { Power, Mute, Channel, Configs } from './types.js'
 
 export class TvAccessory extends TvController {
   public accessory!: PlatformAccessory
@@ -33,7 +24,9 @@ export class TvAccessory extends TvController {
     private readonly platform: TvPlatform,
     private readonly configs: PlatformConfig,
   ) {
-    super({ ip: configs.ip, touchPort: configs.touchPort, port: configs.port })
+    super({
+      ...(configs as unknown as Configs),
+    })
   }
 
   async init() {
@@ -90,10 +83,6 @@ export class TvAccessory extends TvController {
       this.accessory.addService(this.platform.Service.Television)
 
     this.tvService
-      .setCharacteristic(
-        this.platform.Characteristic.ConfiguredName,
-        this.description.friendlyName,
-      )
       .setCharacteristic(
         this.platform.Characteristic.Name,
         this.description.friendlyName,
@@ -186,16 +175,10 @@ export class TvAccessory extends TvController {
       this.accessory.getService(this.platform.Service.TelevisionSpeaker) ||
       this.accessory.addService(this.platform.Service.TelevisionSpeaker)
 
-    this.speakerService
-      .setCharacteristic(
-        this.platform.Characteristic.ConfiguredName,
-        this.description.friendlyName + ' Speaker',
-      )
-      .setCharacteristic(
-        this.platform.Characteristic.Name,
-        this.description.friendlyName + ' Speaker',
-      )
-
+    this.speakerService.setCharacteristic(
+      this.platform.Characteristic.Name,
+      this.description.friendlyName + ' Speaker',
+    )
 
     this.speakerService
       .getCharacteristic(this.platform.Characteristic.Mute)
@@ -228,8 +211,10 @@ export class TvAccessory extends TvController {
     this.tvService.addLinkedService(this.speakerService)
     this.tvService.addLinkedService(informationService)
 
+    // You can disable or modify Netflix and YouTube inputs by commenting out or modifying the following calls
     this.setupApplication('Netflix')
     this.setupApplication('YouTube')
+
     this.channels.forEach((channel) => this.setupChannel(channel))
   }
 
@@ -252,6 +237,7 @@ export class TvAccessory extends TvController {
       this.platform.Characteristic.ConfiguredName,
       channel.name,
     )
+    service.setCharacteristic(this.platform.Characteristic.Name, channel.name)
     service.setCharacteristic(
       this.platform.Characteristic.IsConfigured,
       this.platform.Characteristic.IsConfigured.CONFIGURED,
@@ -291,6 +277,7 @@ export class TvAccessory extends TvController {
       this.platform.Characteristic.ConfiguredName,
       application,
     )
+    service.setCharacteristic(this.platform.Characteristic.Name, application)
     service.setCharacteristic(
       this.platform.Characteristic.IsConfigured,
       this.platform.Characteristic.IsConfigured.CONFIGURED,
@@ -315,34 +302,25 @@ export class TvAccessory extends TvController {
   }
 
   async sendNetflix() {
+    // modify this method to send the command to open Netflix for your TV
     this.sendHome()
     await new Promise((resolve) => setTimeout(resolve, 3000))
-    this.sendHome()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendKeyRight()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendKeyRight()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendSelect()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendSelect()
+    await this.sendHome()
+    await this.sendKeyRight()
+    await this.sendKeyRight()
+    await this.sendSelect()
+    await this.sendSelect()
   }
 
   async sendYouTube() {
+    // modify this method to send the command to open YouTube for your TV
     this.sendHome()
     await new Promise((resolve) => setTimeout(resolve, 3000))
-    this.sendHome()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendKeyRight()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendKeyRight()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendKeyRight()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendKeyRight()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendSelect()
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    this.sendSelect()
+    await this.sendHome()
+    await this.sendKeyRight()
+    await this.sendKeyRight()
+    await this.sendKeyRight()
+    await this.sendKeyRight()
+    await this.sendSelect()
   }
 }
